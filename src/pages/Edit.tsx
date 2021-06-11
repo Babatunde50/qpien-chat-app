@@ -17,6 +17,7 @@ const SAVE_NEW_CHAT = gql`
     saveNewChat(data: $data) {
       text
       createdAt
+      _id
     }
   }
 `;
@@ -26,7 +27,6 @@ const NEW_CHAT_SUBSCRIPTION = gql`
     onNewChat {
       text
       _id
-      createdAt
     }
   }
 `;
@@ -54,6 +54,7 @@ const Edit = () => {
     register,
     handleSubmit,
     watch,
+    reset,
     formState: { errors },
   } = useForm<FormValues>({
     mode: "onBlur",
@@ -66,7 +67,9 @@ const Edit = () => {
   const { register: registerChatInput, handleSubmit: handleChatInputSubmit } =
     useForm<{ text: String }>({ mode: "onBlur" });
 
-  const { data: subData, loading: subLoading } = useSubscription(SAVE_NEW_CHAT);
+  const { data: subData, loading: subLoading } = useSubscription(
+    NEW_CHAT_SUBSCRIPTION
+  );
   const isEditPage = history.location.pathname.trim() === `/edit/${params._id}`;
 
   return (
@@ -121,7 +124,7 @@ const Edit = () => {
             />
           </Route>
           <Route path={`${path}/chat`}>
-            <Chat />
+            <Chat createdChat={subData?.onNewChat} saveChat={saveChat} />
           </Route>
         </Switch>
       </Box>
@@ -149,7 +152,15 @@ const Edit = () => {
           >
             <Box background="#0084e6" p="4" color="white">
               <Flex align="center">
-                <Avatar name="tundejs" mr="4" src={logoURL ? logoURL : "https://assets.hongkiat.com/uploads/psd-text-svg/logo-example.jpg"} />
+                <Avatar
+                  name="tundejs"
+                  mr="4"
+                  src={
+                    logoURL
+                      ? logoURL
+                      : "https://assets.hongkiat.com/uploads/psd-text-svg/logo-example.jpg"
+                  }
+                />
                 <Text fontWeight="bold"> {watch("title")} </Text>
               </Flex>
               <Text fontWeight="light">{watch("bio")}</Text>
@@ -160,7 +171,7 @@ const Edit = () => {
                 const response = await saveChat({
                   variables: { data: { text: data.text } },
                 });
-                console.log(response);
+                reset();
               })}
             >
               <Flex align="center" justify="space-between">
